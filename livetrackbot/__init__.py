@@ -1,6 +1,8 @@
 """Livetracking module."""
+from datetime import datetime
 import logging
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 from ._version import get_versions
@@ -9,8 +11,25 @@ from ._version import get_versions
 load_dotenv()
 
 # Logging configuration.
-FORMAT = '%(asctime)s [%(levelname)-7s] %(name)s: %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.INFO)
+# Log the DEBUG inside a file and the INFO to stderr.
+FORMATTER = logging.Formatter('%(asctime)s [%(levelname)-7s] %(name)s: %(message)s')
+
+# File logger.
+LOGFILE = Path('logs').joinpath(f"livetrackbot_{datetime.now().strftime('%Y%m%d-%H%M%S')}.log")
+file_handler = logging.FileHandler(LOGFILE)  # pylint: disable=invalid-name
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(FORMATTER)
+
+# Stream logger.
+stream_handler = logging.StreamHandler(None)  # pylint: disable=invalid-name
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(FORMATTER)
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)-7s] %(name)s: %(message)s',
+    handlers=[file_handler, stream_handler]
+)
 
 # For a test, you can add `?jD=X` to the URL,
 # where `X` is the number of days in the past.

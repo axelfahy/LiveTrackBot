@@ -3,4 +3,6 @@ services:
   livetrack:
     build: .
     restart: always
+    volumes:
+      - ./logs:/code/logs
 

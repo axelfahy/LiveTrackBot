@@ -16,5 +16,8 @@ RUN apk add --no-cache \
 # Install the program.
 RUN pip install -e .
 
+# Create logs directory.
+RUN mkdir -p /code/logs
+
 # Run it.
 CMD ["livetrackbot"]
