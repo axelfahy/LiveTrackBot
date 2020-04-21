@@ -1,0 +1,2 @@
+include versioneer.py
+include livetrack_bot/_version.py

@@ -1,0 +1,9 @@
+flake8
+mypy
+pytest
+pytest-codestyle
+pytest-cov
+pytest-docstyle
+pytest-pylint
+python-coveralls
+wheel
