@@ -10,6 +10,9 @@ up:
 down:
 	docker-compose down
 
+build:
+	docker-compose build
+
 build-python:
 	python setup.py sdist bdist_wheel
 
