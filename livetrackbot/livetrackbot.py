@@ -8,11 +8,11 @@ from datetime import date, datetime
 import json
 import logging
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import requests
 import telegram
-from urllib.parse import urlparse
 
 from . import (CHANNEL_ID,
                TIMEOUT,
@@ -83,7 +83,7 @@ def get_json(url: str) -> Optional[dict]:
     return None
 
 
-def format_date(date: str) -> str:
+def format_date(date_str: str) -> str:
     """
     Parse the date from a given format to another.
 
@@ -91,7 +91,7 @@ def format_date(date: str) -> str:
 
     Parameters
     ----------
-    date : str
+    date_str : str
         Date from the JSON, format: '%Y-%m-%dT%H:%M:%S%z'
 
     Returns
@@ -99,7 +99,7 @@ def format_date(date: str) -> str:
     str
         Date formatted for the message, format: '%Y-%m-%d %H:%M:%S UTC'
     """
-    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d %H:%M:%S UTC')
+    return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d %H:%M:%S UTC')
 
 
 def run(url: str) -> None:
@@ -113,7 +113,7 @@ def run(url: str) -> None:
 
     Send to the Telegram channel any new take offs or landings.
     """
-    pilots: Dict[str, Dict[str, Dict[str, str]]] = {}
+    pilots: Dict[str, Dict[str, Any]] = {}
     bot = telegram.Bot(token=TELEGRAM_KEY)
     newline = '\n'
     last_update = date.min
@@ -157,23 +157,25 @@ def run(url: str) -> None:
                             if msg == 'OK':
                                 pilots[pilot]['ok'] = points[str(point)]
                                 LOGGER.info(f'{pilots[pilot]} landed.')
-                                bot.sendMessage(chat_id=CHANNEL_ID,
-                                                text=f'*{pilot}* sent OK at '
-                                                     f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
-                                                     f'Duration: '
-                                                     f'{pilots[pilot]["ok"]["flightTime"]}{newline}'
-                                                     f'Cumulative distance: '
-                                                     f'{pilots[pilot]["ok"]["cumDist"]} km{newline}'
-                                                     f'Distance from take off: '
-                                                     f'{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
-                                                     f'{get_display_url(url, pilot)}',
-                                                parse_mode='Markdown')
+                                bot.sendMessage(
+                                    chat_id=CHANNEL_ID,
+                                    text=f'*{pilot}* sent OK at '
+                                         f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
+                                         f'Duration: '
+                                         f'{pilots[pilot]["ok"]["flightTime"]}{newline}'
+                                         f'Cumulative distance: '
+                                         f'{pilots[pilot]["ok"]["cumDist"]} km{newline}'
+                                         f'Distance from take off: '
+                                         f'{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
+                                         f'{get_display_url(url, pilot)}',
+                                    parse_mode='Markdown')
                             elif msg in ('HELP', 'NEW MOVEMENT'):
                                 LOGGER.info(f'{pilots[pilot]} sent {msg}.')
-                                bot.sendMessage(chat_id=CHANNEL_ID,
-                                                text=f'*{pilot}* sent {msg}!!!{newline}'
-                                                     f'{get_display_url(url, pilot)}',
-                                                parse_mode='Markdown')
+                                bot.sendMessage(
+                                    chat_id=CHANNEL_ID,
+                                    text=f'*{pilot}* sent {msg}!!!{newline}'
+                                         f'{get_display_url(url, pilot)}',
+                                    parse_mode='Markdown')
                             else:
                                 LOGGER.debug(f'New point for {pilot}: {points["0"]}')
 
