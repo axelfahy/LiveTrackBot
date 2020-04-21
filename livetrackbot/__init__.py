@@ -10,11 +10,11 @@ load_dotenv()
 
 # Logging configuration.
 FORMAT = '%(asctime)s [%(levelname)-7s] %(name)s: %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+logging.basicConfig(format=FORMAT, level=logging.INFO)
 
 # For a test, you can add `?jD=X` to the URL,
 # where `X` is the number of days in the past.
-TRACKING_URL = 'https://livetrack.gartemann.tech/json4Others.php?jD=10'
+TRACKING_URL = 'https://livetrack.gartemann.tech/json4Others.php'
 TIMEOUT = 5
 # Livetrack is refresh every 5 minutes.
 SLEEP_TIME = 60 * 5
