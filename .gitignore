@@ -1,3 +1,6 @@
+# Syncthing tmp files
+.syncthing*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -135,7 +135,7 @@ def run(url: str) -> None:
                     pilots[pilot] = {}
                     pilots[pilot]['start'] = points[str(points['Count'])]
                     pilots[pilot]['lastTime'] = pilots[pilot]['start']['unixTime']
-                    LOGGER.info(f'{pilots[pilot]} took off.')
+                    LOGGER.info(f'{pilot} took off: {pilots[pilot]}')
                     bot.sendMessage(chat_id=CHANNEL_ID,
                                     text=f'*{pilot}* started tracking at '
                                          f'{format_date(pilots[pilot]["start"]["DateTime"])}',
@@ -156,17 +156,15 @@ def run(url: str) -> None:
                             msg = points[str(point)]['Msg']
                             if msg == 'OK':
                                 pilots[pilot]['ok'] = points[str(point)]
-                                LOGGER.info(f'{pilots[pilot]} landed.')
+                                LOGGER.info(f'{pilot} landed: {pilots[pilot]}')
                                 bot.sendMessage(
                                     chat_id=CHANNEL_ID,
                                     text=f'*{pilot}* sent OK at '
                                          f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
                                          f'Duration: '
                                          f'{pilots[pilot]["ok"]["flightTime"]}{newline}'
-                                         f'Cumulative distance: '
-                                         f'{pilots[pilot]["ok"]["cumDist"]} km{newline}'
-                                         f'Distance from take off: '
-                                         f'{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
+                                         f'Distance ALL/TO: {pilots[pilot]["ok"]["cumDist"]}'
+                                         f'/{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
                                          f'{get_display_url(url, pilot)}',
                                     parse_mode='Markdown')
                             elif msg in ('HELP', 'NEW MOVEMENT'):
@@ -177,7 +175,7 @@ def run(url: str) -> None:
                                          f'{get_display_url(url, pilot)}',
                                     parse_mode='Markdown')
                             else:
-                                LOGGER.debug(f'New point for {pilot}: {points["0"]}')
+                                LOGGER.debug(f'New point for {pilot}: {points[str(point)]}')
 
                         else:
                             break

@@ -1,5 +1,4 @@
 """Livetracking module."""
-from datetime import datetime
 import logging
 import os
 from pathlib import Path
@@ -15,7 +14,7 @@ load_dotenv()
 FORMATTER = logging.Formatter('%(asctime)s [%(levelname)-7s] %(name)s: %(message)s')
 
 # File logger.
-LOGFILE = Path('logs').joinpath(f"livetrackbot_{datetime.now().strftime('%Y%m%d-%H%M%S')}.log")
+LOGFILE = Path('logs').joinpath(f"livetrackbot.log")
 file_handler = logging.FileHandler(LOGFILE)  # pylint: disable=invalid-name
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(FORMATTER)
@@ -35,8 +34,8 @@ logging.basicConfig(
 # where `X` is the number of days in the past.
 TRACKING_URL = 'https://livetrack.gartemann.tech/json4Others.php'
 TIMEOUT = 5
-# Livetrack is refresh every 5 minutes.
-SLEEP_TIME = 60 * 5
+# Livetrack is refresh every minute.
+SLEEP_TIME = 60
 
 # Telegram information.
 TELEGRAM_KEY = os.getenv('TELEGRAM_TOKEN')
