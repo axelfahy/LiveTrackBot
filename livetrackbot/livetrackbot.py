@@ -49,7 +49,7 @@ def get_display_url(url: str, pilot: str) -> str:
     return f'[Tracking]({res}hLg={pilot})'
 
 
-def get_json(url: str) -> Optional[dict]:
+def get_json(url: str, timeout: int = TIMEOUT) -> Optional[dict]:
     """
     Retrieve the JSON from the given url.
 
@@ -58,6 +58,8 @@ def get_json(url: str) -> Optional[dict]:
     ----------
     url : str
         URL containing the JSON.
+    timeout : int, default `TIMEOUT`
+        Timeout for the request.
 
     Returns
     -------
@@ -65,7 +67,7 @@ def get_json(url: str) -> Optional[dict]:
         The JSON retrieved.
     """
     try:
-        r = requests.get(url, timeout=TIMEOUT)
+        r = requests.get(url, timeout=timeout)
         r.raise_for_status()
     except requests.exceptions.HTTPError as errh:
         LOGGER.error(f'Http error: {errh}')
