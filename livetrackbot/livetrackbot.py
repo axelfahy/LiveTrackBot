@@ -153,7 +153,7 @@ def run(url: str) -> None:
                     # For other messages (`HELP`, `NEW MOVEMENT`),
                     # send them with the link of the livetrack.
                     point = 0
-                    while point < points['Count'] - 1:
+                    while point < points['Count']:
                         if points[str(point)]['unixTime'] > pilots[pilot]['lastTime']:
                             msg = points[str(point)]['Msg']
                             if msg == 'OK':
