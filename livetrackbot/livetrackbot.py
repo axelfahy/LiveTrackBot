@@ -8,7 +8,7 @@ from datetime import date, datetime
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Sequence
 from urllib.parse import urlparse
 
 import requests
@@ -20,6 +20,21 @@ from . import (CHANNEL_ID,
                SLEEP_TIME)
 
 LOGGER = logging.getLogger(__name__)
+
+
+def delete_messages(bot: telegram.bot, messages: Sequence[telegram.Message]) -> None:
+    """
+    Delete all the messages sent.
+
+    Parameters
+    ----------
+    bot: telegram.bot
+        Bot used to remove the messages.
+    messages : Sequence of messages
+        List of messages to delete.
+    """
+    for msg in messages:
+        bot.deleteMessage(chat_id=msg.chat.id, message_id=msg.message_id)
 
 
 def get_display_url(url: str, pilot: str) -> str:
@@ -116,14 +131,17 @@ def run(url: str) -> None:
     Send to the Telegram channel any new take offs or landings.
     """
     pilots: Dict[str, Dict[str, Any]] = {}
+    messages: List[telegram.Message] = []
     bot = telegram.Bot(token=TELEGRAM_KEY)
     newline = '\n'
     last_update = date.min
 
     while True:
-        # Each day, clear the pilots.
+        # Each day, clear the pilots and remove the messages.
         if last_update < datetime.utcnow().date():
             pilots.clear()
+            delete_messages(bot, messages)
+            del messages[:]
             last_update = datetime.utcnow().date()
 
         data = get_json(url)
@@ -138,10 +156,11 @@ def run(url: str) -> None:
                     pilots[pilot]['start'] = points[str(points['Count'])]
                     pilots[pilot]['lastTime'] = pilots[pilot]['start']['unixTime']
                     LOGGER.info(f'{pilot} took off: {pilots[pilot]}')
-                    bot.sendMessage(chat_id=CHANNEL_ID,
-                                    text=f'*{pilot}* started tracking at '
-                                         f'{format_date(pilots[pilot]["start"]["DateTime"])}',
-                                    parse_mode='Markdown')
+                    messages.append(bot.sendMessage(
+                        chat_id=CHANNEL_ID,
+                        text=f'*{pilot}* started tracking at '
+                             f'{format_date(pilots[pilot]["start"]["DateTime"])}',
+                        parse_mode='Markdown'))
                 else:
                     # Check the unseen points of the pilot.
                     # A point is unseen if the `unixTime` is higher than
@@ -159,7 +178,7 @@ def run(url: str) -> None:
                             if msg == 'OK':
                                 pilots[pilot]['ok'] = points[str(point)]
                                 LOGGER.info(f'{pilot} landed: {pilots[pilot]}')
-                                bot.sendMessage(
+                                messages.append(bot.sendMessage(
                                     chat_id=CHANNEL_ID,
                                     text=f'*{pilot}* sent OK at '
                                          f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
@@ -168,14 +187,14 @@ def run(url: str) -> None:
                                          f'Distance ALL/TO: {pilots[pilot]["ok"]["cumDist"]}'
                                          f'/{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
                                          f'{get_display_url(url, pilot)}',
-                                    parse_mode='Markdown')
-                            elif msg in ('HELP', 'NEW MOVEMENT'):
+                                    parse_mode='Markdown'))
+                            elif msg in ('HELP', 'MOVE', 'CUSTOM'):
                                 LOGGER.info(f'{pilots[pilot]} sent {msg}.')
-                                bot.sendMessage(
+                                messages.append(bot.sendMessage(
                                     chat_id=CHANNEL_ID,
                                     text=f'*{pilot}* sent {msg}!!!{newline}'
                                          f'{get_display_url(url, pilot)}',
-                                    parse_mode='Markdown')
+                                    parse_mode='Markdown'))
                             else:
                                 LOGGER.debug(f'New point for {pilot}: {points[str(point)]}')
 
