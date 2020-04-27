@@ -14,8 +14,7 @@ from urllib.parse import urlparse
 import requests
 import telegram
 
-from . import (CHANNEL_ID,
-               TIMEOUT,
+from . import (TIMEOUT,
                TELEGRAM_KEY,
                SLEEP_TIME)
 
@@ -119,12 +118,14 @@ def format_date(date_str: str) -> str:
     return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d %H:%M:%S UTC')
 
 
-def run(url: str) -> None:
+def run(channel: str, url: str) -> None:
     """
     Get the JSON every 5 minutes and parse it.
 
     Parameters
     ----------
+    channel : str
+        Channel's ID to send the messages to.
     url : str
         URL containing the JSON.
 
@@ -157,7 +158,7 @@ def run(url: str) -> None:
                     pilots[pilot]['lastTime'] = pilots[pilot]['start']['unixTime']
                     LOGGER.info(f'{pilot} took off: {pilots[pilot]}')
                     messages.append(bot.sendMessage(
-                        chat_id=CHANNEL_ID,
+                        chat_id=channel,
                         text=f'*{pilot}* started tracking at '
                              f'{format_date(pilots[pilot]["start"]["DateTime"])}',
                         parse_mode='Markdown'))
@@ -179,7 +180,7 @@ def run(url: str) -> None:
                                 pilots[pilot]['ok'] = points[str(point)]
                                 LOGGER.info(f'{pilot} landed: {pilots[pilot]}')
                                 messages.append(bot.sendMessage(
-                                    chat_id=CHANNEL_ID,
+                                    chat_id=channel,
                                     text=f'*{pilot}* sent OK at '
                                          f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
                                          f'Duration: '
@@ -191,7 +192,7 @@ def run(url: str) -> None:
                             elif msg in ('HELP', 'MOVE', 'CUSTOM'):
                                 LOGGER.info(f'{pilots[pilot]} sent {msg}.')
                                 messages.append(bot.sendMessage(
-                                    chat_id=CHANNEL_ID,
+                                    chat_id=channel,
                                     text=f'*{pilot}* sent {msg}!!!{newline}'
                                          f'{get_display_url(url, pilot)}',
                                     parse_mode='Markdown'))
