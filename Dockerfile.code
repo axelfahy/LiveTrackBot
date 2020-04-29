@@ -1,0 +1,15 @@
+FROM livetrackbot-base
+
+WORKDIR /code
+
+# Copy the project.
+COPY . .
+
+# Install the program.
+RUN pip install -e .
+
+# Create logs directory.
+RUN mkdir -p /code/logs
+
+# Run it.
+ENTRYPOINT ["livetrackbot"]

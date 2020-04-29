@@ -1,0 +1,5 @@
+venv*
+requirements_dev.txt
+**/*.egg*
+**/*.pyc
+.git*

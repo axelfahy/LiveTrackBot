@@ -1,0 +1,5 @@
+click
+python-dotenv
+python-telegram-bot
+requests
+typing
