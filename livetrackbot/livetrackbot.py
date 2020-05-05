@@ -56,7 +56,7 @@ def get_display_url(url: str, pilot: str) -> str:
         URL to display the track of the pilot
     """
     s = urlparse(url)
-    res = f'{s.scheme}://{s.netloc}?'
+    res = f'{s.scheme}://{s.netloc}{s.path.replace("/json4Others.php", "")}?'
 
     if s.query != '':
         res += f'{s.query}&'
