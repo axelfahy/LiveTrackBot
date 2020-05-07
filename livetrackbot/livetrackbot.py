@@ -196,6 +196,14 @@ def run(channel: str, url: str) -> None:
                                     text=f'*{pilot}* sent {msg}!!!{newline}'
                                          f'{get_display_url(url, pilot)}',
                                     parse_mode='Markdown'))
+                            elif msg == 'START':
+                                # Pilot took off again, not on Spot for now.
+                                LOGGER.info(f'{pilot} took off again: {pilots[pilot]}')
+                                messages.append(bot.sendMessage(
+                                    chat_id=channel,
+                                    text=f'*{pilot}* started tracking again at '
+                                         f'{format_date(pilots[pilot]["start"]["DateTime"])}',
+                                    parse_mode='Markdown'))
                             else:
                                 LOGGER.debug(f'New point for {pilot}: {points[str(point)]}')
 
