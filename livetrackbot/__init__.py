@@ -29,6 +29,7 @@ FORMATTER = logging.Formatter('%(asctime)s [%(levelname)-7s] %(name)s: %(message
 
 # File logger.
 LOGFILE = Path('logs').joinpath(f'livetrackbot_{CHANNEL_ID}.log')
+LOGFILE.parent.mkdir(exist_ok=True)
 file_handler = logging.FileHandler(LOGFILE)  # pylint: disable=invalid-name
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(FORMATTER)
