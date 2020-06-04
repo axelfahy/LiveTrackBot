@@ -1,14 +1,8 @@
 # Makefile to simplify test and build.
 
-.PHONY: all up down test clean test-env lint style coverage
+.PHONY: all run-followus run-alpsfreeride run-axlair test clean test-env lint style coverage
 
 all: test
-
-up:
-	docker-compose up -d --remove-orphans
-
-down:
-	docker-compose down
 
 build-base:
 	docker build -f Dockerfile.base -t livetrackbot-base .
@@ -34,7 +28,7 @@ endif
 	$(MAKE) run-docker
 
 run-followus:
-	$(MAKE) run channel="@FollowUsIfYouCan_channel" url="https://livetrack.gartemann.tech/json4Others.php"
+	$(MAKE) run channel="@FollowUsIfYouCan_channel" url="https://livetrack.gartemann.tech/json4Others.php?grp=Cross"
 
 
 run-alpsfreeride:
