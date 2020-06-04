@@ -67,7 +67,6 @@ def get_json(url: str, timeout: int = TIMEOUT) -> Optional[dict]:
     """
     Retrieve the JSON from the given url.
 
-
     Parameters
     ----------
     url : str
@@ -122,14 +121,14 @@ def run(channel: str, url: str) -> None:
     """
     Get the JSON every 5 minutes and parse it.
 
+    Send to the Telegram channel any new take offs or landings.
+
     Parameters
     ----------
     channel : str
         Channel's ID to send the messages to.
     url : str
         URL containing the JSON.
-
-    Send to the Telegram channel any new take offs or landings.
     """
     pilots: Dict[str, Dict[str, Any]] = {}
     messages: List[telegram.Message] = []
@@ -157,11 +156,11 @@ def run(channel: str, url: str) -> None:
                     pilots[pilot]['start'] = points[str(points['Count'])]
                     pilots[pilot]['lastTime'] = pilots[pilot]['start']['unixTime']
                     LOGGER.info(f'{pilot} took off: {pilots[pilot]}')
-                    messages.append(bot.sendMessage(
-                        chat_id=channel,
-                        text=f'*{pilot}* started tracking at '
-                             f'{format_date(pilots[pilot]["start"]["DateTime"])}',
-                        parse_mode='Markdown'))
+                    messages.append(send_message(
+                        bot,
+                        channel,
+                        (f'*{pilot}* started tracking at '
+                         f'{format_date(pilots[pilot]["start"]["DateTime"])}')))
                 else:
                     # Check the unseen points of the pilot.
                     # A point is unseen if the `unixTime` is higher than
@@ -179,37 +178,72 @@ def run(channel: str, url: str) -> None:
                             if msg == 'OK':
                                 pilots[pilot]['ok'] = points[str(point)]
                                 LOGGER.info(f'{pilot} landed: {pilots[pilot]}')
-                                messages.append(bot.sendMessage(
-                                    chat_id=channel,
-                                    text=f'*{pilot}* sent OK at '
-                                         f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
-                                         f'Duration: '
-                                         f'{pilots[pilot]["ok"]["flightTime"]}{newline}'
-                                         f'Distance ALL/TO: {pilots[pilot]["ok"]["cumDist"]}'
-                                         f'/{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
-                                         f'{get_display_url(url, pilot)}',
-                                    parse_mode='Markdown'))
+                                messages.append(send_message(
+                                    bot,
+                                    channel,
+                                    (f'*{pilot}* sent OK at '
+                                     f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
+                                     f'Duration: '
+                                     f'{pilots[pilot]["ok"]["flightTime"]}{newline}'
+                                     f'Distance ALL/TO: {pilots[pilot]["ok"]["cumDist"]}'
+                                     f'/{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
+                                     f'{get_display_url(url, pilot)}')))
                             elif msg in ('HELP', 'MOVE', 'CUSTOM'):
                                 LOGGER.info(f'{pilots[pilot]} sent {msg}.')
-                                messages.append(bot.sendMessage(
-                                    chat_id=channel,
-                                    text=f'*{pilot}* sent {msg}!!!{newline}'
-                                         f'{get_display_url(url, pilot)}',
-                                    parse_mode='Markdown'))
+                                messages.append(send_message(
+                                    bot,
+                                    channel,
+                                    (f'*{pilot}* sent {msg}!!!{newline}'
+                                     f'{get_display_url(url, pilot)}')))
                             elif msg == 'START':
                                 # Pilot took off again, not on Spot for now.
                                 LOGGER.info(f'{pilot} took off again: {pilots[pilot]}')
-                                messages.append(bot.sendMessage(
-                                    chat_id=channel,
-                                    text=f'*{pilot}* started tracking again at '
-                                         f'{format_date(pilots[pilot]["start"]["DateTime"])}',
-                                    parse_mode='Markdown'))
+                                messages.append(send_message(
+                                    bot,
+                                    channel,
+                                    (f'*{pilot}* started tracking again at '
+                                     f'{format_date(pilots[pilot]["start"]["DateTime"])}')))
                             else:
                                 LOGGER.debug(f'New point for {pilot}: {points[str(point)]}')
-
                         else:
                             break
                         point += 1
                     pilots[pilot]['lastTime'] = points['0']['unixTime']
 
         time.sleep(SLEEP_TIME)
+
+
+def send_message(bot: telegram.Bot, channel: str, text: str,
+                 parse_mode: str = 'Markdown') -> Optional[telegram.Message]:
+    """
+    Send a message on the channel.
+
+    Handles possible exception and return the send message.
+
+    Parameters
+    ----------
+    bot : telegram.Bot
+        Bot object containing the API key.
+    channel : str
+        Channel's ID to send the messages to.
+    text : str
+        Text to send.
+    parse_mode : str, default `Markdown`
+        Mode for the parsing.
+
+    Returns
+    -------
+    telegram.Message
+        The message object from the telegram api, containing the chat and message id.
+    """
+    try:
+        msg = bot.sendMessage(
+            chat_id=channel,
+            text=text,
+            parse_mode=parse_mode)
+    except (telegram.vendor.ptb_urllib3.urllib3.exceptions.ReadTimeoutError,
+            telegram.error.TimedOut) as e:
+        LOGGER.error(f'Error when sending message {text} on channel {channel}: {e}')
+        return None
+    else:
+        return msg
