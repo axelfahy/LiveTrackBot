@@ -1,6 +1,7 @@
 """Livetracking module."""
 import logging
 import os
+import uuid
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -28,7 +29,7 @@ TELEGRAM_URL = f'https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage?chat_id=
 FORMATTER = logging.Formatter('%(asctime)s [%(levelname)-7s] %(name)s: %(message)s')
 
 # File logger.
-LOGFILE = Path('logs').joinpath(f'livetrackbot_{CHANNEL_ID}.log')
+LOGFILE = Path('logs').joinpath(f'livetrackbot_{uuid.uuid4()}.log')
 LOGFILE.parent.mkdir(exist_ok=True)
 file_handler = logging.FileHandler(LOGFILE)  # pylint: disable=invalid-name
 file_handler.setLevel(logging.DEBUG)
