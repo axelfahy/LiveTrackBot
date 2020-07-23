@@ -30,7 +30,6 @@ endif
 run-followus:
 	$(MAKE) run channel="@FollowUsIfYouCan_channel" url="https://livetrack.gartemann.tech/json4Others.php?grp=Cross"
 
-
 run-alpsfreeride:
 	$(MAKE) run channel="@alpsfreeride" url="https://www.alpsfreeride.com/livetracking/json4Others.php"
 

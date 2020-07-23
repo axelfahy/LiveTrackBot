@@ -4,11 +4,12 @@
 This module get the json data about the flight and send
 messages for take-offs and landings.
 """
+from dataclasses import dataclass
 from datetime import date, datetime
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 from urllib.parse import urlparse
 
 import requests
@@ -19,6 +20,67 @@ from . import (TIMEOUT,
                SLEEP_TIME)
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class Point():
+    """
+    Class to store information about a point.
+
+    The points can be loaded from json using `from_json`.
+    """
+    cum_dist: str
+    take_off_dist: str
+    flight_time: str
+    avg_speed: str
+    leg_speed: str
+    leg_dist: str
+    lat: float
+    lng: float
+    alt: int
+    msg: str
+    date_time: str
+    unix_time: int
+    spot_id: int
+
+    def __init__(self, json_dict: dict):
+        """
+        Create a `Point` object from a dictionnary.
+
+        Parameters
+        ----------
+        json: dict
+            JSON with the data point, as a dictionary.
+
+        Returns
+        -------
+        Point
+            Point with the data from the JSON.
+        """
+        self.cum_dist = json_dict['cumDist']
+        self.take_off_dist = json_dict['takeOffDist']
+        self.flight_time = json_dict['flightTime']
+        self.avg_speed = json_dict['AvgSpeed']
+        self.leg_speed = json_dict['LegSpeed']
+        self.leg_dist = json_dict['LegDist']
+        self.lat = json_dict['Lat']
+        self.lng = json_dict['Lng']
+        self.alt = json_dict['Alt']
+        self.msg = json_dict['Msg']
+        self.date_time = json_dict['DateTime']
+        self.unix_time = json_dict['unixTime']
+        self.spot_id = json_dict['spotId']
+
+
+@dataclass
+class Pilot:
+    """
+    Class to store information about a pilot.
+
+    Only the last point needs to be saved in order to know if the other points are new.
+    """
+    name: str
+    last_point: Point
 
 
 def delete_messages(bot: telegram.bot, messages: Sequence[telegram.Message]) -> None:
@@ -33,7 +95,10 @@ def delete_messages(bot: telegram.bot, messages: Sequence[telegram.Message]) -> 
         List of messages to delete.
     """
     for msg in messages:
-        bot.deleteMessage(chat_id=msg.chat.id, message_id=msg.message_id)
+        try:
+            bot.deleteMessage(chat_id=msg.chat.id, message_id=msg.message_id)
+        except telegram.error.BadRequest as e:
+            LOGGER.error(f'Error when deleting the message {msg.message_id}: {e}')
 
 
 def get_display_url(url: str, pilot: str) -> str:
@@ -94,7 +159,7 @@ def get_json(url: str, timeout: int = TIMEOUT) -> Optional[dict]:
         try:
             return r.json()
         except json.JSONDecodeError as e:
-            LOGGER.error(f'Error decoding the json: {e}')
+            LOGGER.error(f'Error decoding the json: {e} - {r.text}')
     return None
 
 
@@ -102,7 +167,7 @@ def format_date(date_str: str) -> str:
     """
     Parse the date from a given format to another.
 
-    Used to send a correct format of date in the message.
+    Use to send a correct format of date in the message.
 
     Parameters
     ----------
@@ -113,13 +178,23 @@ def format_date(date_str: str) -> str:
     -------
     str
         Date formatted for the message, format: '%Y-%m-%d %H:%M:%S UTC'
+        If format is not correct, the original date is returned.
     """
-    return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d %H:%M:%S UTC')
+    try:
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z').strftime('%Y-%m-%d %H:%M:%S UTC')
+    except ValueError as e:
+        LOGGER.error(f'Format for date {date_str} is not correct: {e}')
+    # Try another format if it did not work.
+    try:
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%').strftime('%Y-%m-%d %H:%M:%S UTC')
+    except ValueError as e:
+        LOGGER.error(f'Format for date {date_str} is not correct: {e}')
+    return date_str
 
 
 def run(channel: str, url: str) -> None:
     """
-    Get the JSON every 5 minutes and parse it.
+    Get the JSON every `SLEEP_TIME` and parse it.
 
     Send to the Telegram channel any new take offs or landings.
 
@@ -130,7 +205,7 @@ def run(channel: str, url: str) -> None:
     url : str
         URL containing the JSON.
     """
-    pilots: Dict[str, Dict[str, Any]] = {}
+    pilots: Dict[str, Pilot] = {}
     messages: List[telegram.Message] = []
     bot = telegram.Bot(token=TELEGRAM_KEY)
     newline = '\n'
@@ -144,71 +219,69 @@ def run(channel: str, url: str) -> None:
             del messages[:]
             last_update = datetime.utcnow().date()
 
+        # Load the JSON and create the points for each pilots.
         data = get_json(url)
-
         if data:
             for pilot, points in data.items():
-                # If pilot is not in the dict, add it and
-                # recover the first point of the pilot to get
-                # the start time of the flight.
+                # Check the pilot and set the last point with the first point.
                 if pilot not in pilots:
-                    pilots[pilot] = {}
-                    pilots[pilot]['start'] = points[str(points['Count'])]
-                    pilots[pilot]['lastTime'] = pilots[pilot]['start']['unixTime']
+                    pilots[pilot] = Pilot(name=pilot,
+                                          last_point=Point(points[str(points['Count'])]))
                     LOGGER.info(f'{pilot} took off: {pilots[pilot]}')
                     messages.append(send_message(
                         bot,
                         channel,
                         (f'*{pilot}* started tracking at '
-                         f'{format_date(pilots[pilot]["start"]["DateTime"])}')))
-                else:
-                    # Check the unseen points of the pilot.
-                    # A point is unseen if the `unixTime` is higher than
-                    # the pilot's `lastTime` value.
-                    # If this is an `OK`, send a message on the channel with flight information:
-                    # Flight time, distance, distance to take off
-                    # (to know if we need to go get him...)
-                    # Send the link to the livetrack as well.
+                         f'{format_date(pilots[pilot].last_point.date_time)}')))
+
+                # Create a list with only the points to process, based on timestamp.
+                unseen_points = sorted(
+                    [Point(v) for k, v in points.items() if k != 'Count'
+                     if v['unixTime'] > pilots[pilot].last_point.unix_time],
+                    key=lambda x: x.unix_time)
+
+                for point in unseen_points:
+                    # If this is an `OK`, send a message on the channel with flight information
                     # For other messages (`HELP`, `NEW MOVEMENT`),
                     # send them with the link of the livetrack.
-                    point = 0
-                    while point < points['Count']:
-                        if points[str(point)]['unixTime'] > pilots[pilot]['lastTime']:
-                            msg = points[str(point)]['Msg']
-                            if msg == 'OK':
-                                pilots[pilot]['ok'] = points[str(point)]
-                                LOGGER.info(f'{pilot} landed: {pilots[pilot]}')
-                                messages.append(send_message(
-                                    bot,
-                                    channel,
-                                    (f'*{pilot}* sent OK at '
-                                     f'{format_date(pilots[pilot]["ok"]["DateTime"])}{newline}'
-                                     f'Duration: '
-                                     f'{pilots[pilot]["ok"]["flightTime"]}{newline}'
-                                     f'Distance ALL/TO: {pilots[pilot]["ok"]["cumDist"]}'
-                                     f'/{pilots[pilot]["ok"]["takeOffDist"]} km{newline}'
-                                     f'{get_display_url(url, pilot)}')))
-                            elif msg in ('HELP', 'MOVE', 'CUSTOM'):
-                                LOGGER.info(f'{pilots[pilot]} sent {msg}.')
-                                messages.append(send_message(
-                                    bot,
-                                    channel,
-                                    (f'*{pilot}* sent {msg}!!!{newline}'
-                                     f'{get_display_url(url, pilot)}')))
-                            elif msg == 'START':
-                                # Pilot took off again, not on Spot for now.
-                                LOGGER.info(f'{pilot} took off again: {pilots[pilot]}')
-                                messages.append(send_message(
-                                    bot,
-                                    channel,
-                                    (f'*{pilot}* started tracking again at '
-                                     f'{format_date(pilots[pilot]["start"]["DateTime"])}')))
-                            else:
-                                LOGGER.debug(f'New point for {pilot}: {points[str(point)]}')
-                        else:
-                            break
-                        point += 1
-                    pilots[pilot]['lastTime'] = points['0']['unixTime']
+                    if point.msg == 'OK':
+                        LOGGER.info(f'{pilot} landed: {point}')
+                        messages.append(send_message(
+                            bot,
+                            channel,
+                            (f'*{pilot}* sent OK at {format_date(point.date_time)}{newline}'
+                             f'Duration: {point.flight_time}{newline}'
+                             f'Distance ALL/TO: {point.cum_dist}'
+                             f'/{point.take_off_dist} km{newline}'
+                             f'{get_display_url(url, pilot)}')))
+                    elif point.msg in ('HELP', 'MOVE', 'CUSTOM'):
+                        LOGGER.info(f'{pilots[pilot]} sent message: {point}.')
+                        messages.append(send_message(
+                            bot,
+                            channel,
+                            (f'*{pilot}* sent {point.msg}!!!{newline}'
+                             f'{get_display_url(url, pilot)}')))
+                    elif point.msg == 'START':
+                        # Pilot took off again, not on Spot for now.
+                        LOGGER.info(f'{pilot} took off again: {point}')
+                        messages.append(send_message(
+                            bot,
+                            channel,
+                            (f'*{pilot}* started tracking again at '
+                             f'{format_date(point.date_time)}')))
+                    elif point.msg == 'OFF':
+                        LOGGER.info(f'{pilot} turned the tracking off: {point}')
+                        messages.append(send_message(
+                            bot,
+                            channel,
+                            (f'*{pilot}* turned the tracking off at '
+                             f'{format_date(point.date_time)}')))
+                    else:
+                        LOGGER.debug(f'New point for {pilot}: {point}')
+
+                # Update the last point
+                if unseen_points:
+                    pilots[pilot].last_point = unseen_points[-1]
 
         time.sleep(SLEEP_TIME)
 
