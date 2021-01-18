@@ -99,6 +99,8 @@ def delete_messages(bot: telegram.bot, messages: Sequence[telegram.Message]) -> 
             bot.deleteMessage(chat_id=msg.chat.id, message_id=msg.message_id)
         except telegram.error.BadRequest as e:
             LOGGER.error(f'Error when deleting the message {msg.message_id}: {e}')
+        except AttributeError as e:
+            LOGGER.error(f'Error when deleting the message {msg}: {e}')
 
 
 def get_display_url(url: str, pilot: str) -> str:
@@ -309,6 +311,7 @@ def send_message(bot: telegram.Bot, channel: str, text: str,
     telegram.Message
         The message object from the telegram api, containing the chat and message id.
     """
+    msg = None
     try:
         msg = bot.sendMessage(
             chat_id=channel,
@@ -317,6 +320,4 @@ def send_message(bot: telegram.Bot, channel: str, text: str,
     except (telegram.vendor.ptb_urllib3.urllib3.exceptions.ReadTimeoutError,
             telegram.error.TimedOut) as e:
         LOGGER.error(f'Error when sending message {text} on channel {channel}: {e}')
-        return None
-    else:
-        return msg
+    return msg
