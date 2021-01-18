@@ -120,7 +120,7 @@ def get_display_url(url: str, pilot: str) -> str:
     Returns
     -------
     str
-        URL to display the track of the pilot
+        URL to display the track of the pilot.
     """
     s = urlparse(url)
     res = f'{s.scheme}://{s.netloc}{s.path.replace("/json4Others.php", "")}?'
@@ -163,6 +163,27 @@ def get_json(url: str, timeout: int = TIMEOUT) -> Optional[dict]:
         except json.JSONDecodeError as e:
             LOGGER.error(f'Error decoding the json: {e} - {r.text}')
     return None
+
+
+def get_itinerary_url(point: Point) -> str:
+    """
+    Get the url with the map itinerary to retrieve the pilot.
+
+    Need the latitude and longitude of the pilot.
+
+    Parameters
+    ----------
+    point : Point
+        Point of the pilot.
+
+    Returns
+    -------
+    str
+        URL with the map itinerary.
+    """
+    base_url = 'https://www.google.com/maps/dir/?api=1&destination='
+    link_name = '[Pick Me]'
+    return f'{link_name}({base_url}{point.lat},{point.lng}&travelmode=driving)'
 
 
 def format_date(date_str: str) -> str:
@@ -255,7 +276,8 @@ def run(channel: str, url: str) -> None:
                              f'Duration: {point.flight_time}{newline}'
                              f'Distance ALL/TO: {point.cum_dist}'
                              f'/{point.take_off_dist} km{newline}'
-                             f'{get_display_url(url, pilot)}')))
+                             f'{get_display_url(url, pilot)}{newline}'
+                             f'{get_itinerary_url(point)}')))
                     elif point.msg in ('HELP', 'MOVE', 'CUSTOM'):
                         LOGGER.info(f'{pilots[pilot]} sent message: {point}.')
                         messages.append(send_message(
