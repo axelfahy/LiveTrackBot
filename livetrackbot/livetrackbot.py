@@ -148,6 +148,7 @@ def get_json(url: str, timeout: int = TIMEOUT) -> Optional[dict]:
     """
     try:
         r = requests.get(url, timeout=timeout)
+        r.encoding = 'utf-8-sig'
         r.raise_for_status()
     except requests.exceptions.HTTPError as errh:
         LOGGER.error(f'Http error: {errh}')
