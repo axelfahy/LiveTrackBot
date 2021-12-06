@@ -1,6 +1,6 @@
 # Base images for deployment, with needed dependencies.
 # This image is created to avoid installing the dependencies each time.
-FROM python:3.8-alpine
+FROM python:3.10-alpine
 
 # Install dependencies for the cryptography package.
 RUN apk add --no-cache \

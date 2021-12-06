@@ -12,7 +12,11 @@ build: build-base
 
 run-docker: build
 	docker run -d \
-	--restart=always \
+	--restart=unless-stopped \
+	--network=monitoring \
+	--expose=9095 \
+	-l "prometheus.io/scrape=true" \
+	-l "prometheus.io/extra-labels=livetrack:$(channel)" \
 	-v /var/log:/code/logs livetrackbot-code \
 	--channel $(channel) --url $(url)
 

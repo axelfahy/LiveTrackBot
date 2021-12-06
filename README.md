@@ -20,6 +20,19 @@ Examples of messages:
 
 The telegram key is stored inside a `.env` file and loaded using the `load_dotenv()` function from the `python-dotenv` package.
 
+Metrics are stored using Prometheus and visualized using Grafana. An instance of Prometheus must be running.
+
+## Metrics
+
+Metrics are collected using Prometheus and visualized using Grafana.
+
+| Metric              | Type    |  Description                                     |
+|:--------------------|:--------|:-------------------------------------------------|
+| *errors_total*        | Counter | Number of errors (parsing or from the requests). |
+| *messages_send_total* | Counter | Number of messages sent on the channel.          |
+| *pilots_flying*       | Gauge   | Number of pilots currently flying.               |
+| *requests_total*      | Counter | Number of requests sent.                         |
+
 ## Installation
 
 ```sh

@@ -1,4 +1,5 @@
 click
+prometheus-client
 python-dotenv
 python-telegram-bot
 requests
