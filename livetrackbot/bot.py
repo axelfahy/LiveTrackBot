@@ -186,6 +186,8 @@ class LivetrackBot:
                 self.delete_messages(messages)
                 del messages[:]
                 last_update = datetime.utcnow().date()
+                # Reset the number of pilots flying in case they didn't send the `OK` message.
+                self.metrics["pilots_flying"].set(0)
 
             # Load the JSON and create the points for each pilots.
             data = self.get_json()
