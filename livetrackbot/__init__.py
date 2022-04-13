@@ -16,6 +16,8 @@ TRACKING_URL = "https://livetrack.gartemann.tech/json4Others.php"
 TIMEOUT = 5
 # Livetrack is refresh every minute.
 SLEEP_TIME = int(os.getenv("SLEEP_TIME", "60"))
+# Settings for SBB itinerary.
+API_SEARCH = "https://timetable.search.ch/api/route.json"
 
 # Port for Prometheus.
 METRICS_PORT = int(os.getenv("METRICS_PORT", "9095"))

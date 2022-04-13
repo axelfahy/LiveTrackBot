@@ -36,7 +36,7 @@ class Point:
 
         Parameters
         ----------
-        json: dict
+        json : dict
             JSON with the data point, as a dictionary.
 
         Returns

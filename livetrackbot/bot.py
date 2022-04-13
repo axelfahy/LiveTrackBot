@@ -16,6 +16,7 @@ import requests
 import telegram
 
 from livetrackbot import METRICS_NAMESPACE, SLEEP_TIME, TELEGRAM_KEY, TIMEOUT
+from livetrackbot.config import Config
 from livetrackbot.pilot import Pilot
 from livetrackbot.point import Point
 
@@ -46,6 +47,7 @@ class LivetrackBot:
         """
         self.channel = channel
         self.url = url
+        self.config = Config()
 
         self.bot = telegram.Bot(token=TELEGRAM_KEY)
 
@@ -135,7 +137,7 @@ class LivetrackBot:
         """
         Send a message on the channel.
 
-        Handles possible exception and return the send message.
+        Handles possible exception and return the message sent.
 
         Parameters
         ----------
@@ -169,7 +171,7 @@ class LivetrackBot:
         """
         Get the JSON every `SLEEP_TIME` and parse it.
 
-        Send to the Telegram channel any new take offs or landings.
+        Send to the Telegram channel any new take-offs or landings.
         """
         LOGGER.info("Starting bot...")
         LOGGER.info(f"Channel: {self.channel}")
@@ -189,14 +191,17 @@ class LivetrackBot:
                 # Reset the number of pilots flying in case they didn't send the `OK` message.
                 self.metrics["pilots_flying"].set(0)
 
-            # Load the JSON and create the points for each pilots.
+            # Load the JSON and create the points for each pilot.
             data = self.get_json()
             if data:
                 for pilot, points in data.items():
                     # Check the pilot and set the last point with the first point.
                     if pilot not in pilots:
+                        home = self.config.get(pilot, default="Geneva")
                         pilots[pilot] = Pilot(
-                            name=pilot, last_point=Point(points[str(points["Count"])])
+                            name=pilot,
+                            last_point=Point(points[str(points["Count"])]),
+                            home=home,
                         )
                         LOGGER.info(f"{pilot} took off: {pilots[pilot]}")
                         messages.append(
@@ -234,7 +239,8 @@ class LivetrackBot:
                                         f"Distance ALL/TO: {point.cum_dist}"
                                         f"/{point.take_off_dist} km{self.NEWLINE}"
                                         f"{pilots[pilot].get_display_url(self.url)}{self.NEWLINE}"
-                                        f"{point.get_itinerary_url()}"
+                                        f"{point.get_itinerary_url()}{self.NEWLINE}"
+                                        f"{pilots[pilot].get_sbb_itinerary()}"
                                     )
                                 )
                             )
