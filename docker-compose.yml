@@ -1,0 +1,64 @@
+version: '3'
+
+networks:
+  monitoring:
+    external: true
+    name: monitoring
+
+services:
+  # Alpsfreeride
+  livetrack-alpsfreeride:
+    image: livetrackbot-code
+    environment:
+      - METRICS_PORT=9096
+    command: --channel @alpsfreeride --url https://www.alpsfreeride.com/livetracking/json4Others.php
+    ports:
+      - 9096:9096
+    volumes:
+      - /var/log:/code/logs
+      - ./configs/config-alpsfreeride.json:/root/.config/livetrackbot/config.json
+    networks:
+      - monitoring
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9096"
+      - "prometheus.io/extra-labels=livetrack:@alpsfreeride"
+    restart: unless-stopped
+
+  # Axlair
+  livetrack-axlair:
+    image: livetrackbot-code
+    environment:
+      - METRICS_PORT=9097
+    command: --channel @FollowAxlair --url https://livetrack.gartemann.tech/json4Others.php?pL=Axel
+    ports:
+      - 9097:9097
+    volumes:
+      - /var/log:/code/logs
+      - ./configs/config-axlair.json:/root/.config/livetrackbot/config.json
+    networks:
+      - monitoring
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9097"
+      - "prometheus.io/extra-labels=livetrack:@axlair"
+    restart: unless-stopped
+
+  # FollowUs
+  livetrack-followus:
+    image: livetrackbot-code
+    environment:
+      - METRICS_PORT=9098
+    command: --channel @FollowUsIfYouCan_channel --url https://livetrack.gartemann.tech/json4Others.php?grp=Cross
+    ports:
+      - 9098:9098
+    volumes:
+      - /var/log:/code/logs
+      - ./configs/config-followus.json:/root/.config/livetrackbot/config.json
+    networks:
+      - monitoring
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=9098"
+      - "prometheus.io/extra-labels=livetrack:@followus"
+    restart: unless-stopped

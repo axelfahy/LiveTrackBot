@@ -1,6 +1,6 @@
 # Makefile to simplify test and build.
 
-.PHONY: all run-followus run-alpsfreeride run-axlair test clean test-env lint style coverage
+.PHONY: all test clean test-env lint style coverage
 
 all: test
 
@@ -13,32 +13,13 @@ build: build-base
 run-docker: build
 	docker run -d \
 	--restart=unless-stopped \
+	--name=$(channel) \
 	--network=monitoring \
 	--expose=9095 \
 	-l "prometheus.io/scrape=true" \
 	-l "prometheus.io/extra-labels=livetrack:$(channel)" \
 	-v /var/log:/code/logs livetrackbot-code \
 	--channel $(channel) --url $(url)
-
-run:
-# Check the arguments.
-ifndef channel
-	$(error Error channel is not set)
-endif
-ifndef url
-	$(error Error url is not set)
-endif
-	@echo "Starting bot $(name) for channel $(channel) and url $(url)"
-	$(MAKE) run-docker
-
-run-followus:
-	$(MAKE) run channel="@FollowUsIfYouCan_channel" url="https://livetrack.gartemann.tech/json4Others.php?grp=Cross"
-
-run-alpsfreeride:
-	$(MAKE) run channel="@alpsfreeride" url="https://www.alpsfreeride.com/livetracking/json4Others.php"
-
-run-axlair:
-	$(MAKE) run channel="@FollowAxlair" url="https://livetrack.gartemann.tech/json4Others.php?pL=Axel"
 
 build-python:
 	python setup.py sdist bdist_wheel
