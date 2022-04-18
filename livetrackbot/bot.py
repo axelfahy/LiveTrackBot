@@ -197,7 +197,7 @@ class LivetrackBot:
                 for pilot, points in data.items():
                     # Check the pilot and set the last point with the first point.
                     if pilot not in pilots:
-                        home = self.config.get(pilot, default="Geneva")
+                        home = self.config[pilot] if pilot in self.config else "Geneva"
                         pilots[pilot] = Pilot(
                             name=pilot,
                             last_point=Point(points[str(points["Count"])]),

@@ -48,6 +48,10 @@ class Config(Mapping):
             self._config = {}
             LOGGER.warning(f"Configuration path {path} does not exist.")
 
+    def __contains__(self, value):
+        """Containt of the class."""
+        return value in self._config
+
     def __getitem__(self, item):
         """Getter of the class."""
         try:
