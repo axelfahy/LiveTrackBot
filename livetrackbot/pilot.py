@@ -67,7 +67,7 @@ class Pilot:
             "to": self.home,
         }
         result = requests.get(API_SEARCH, params=payload).json()
-        url = result["url"]
+        url = result.get("url", "no available url")
         LOGGER.debug(f"URL for SBB itinerary: {url}")
         link_name = "[Back with SBB]"
         return f"{link_name}({url})"
