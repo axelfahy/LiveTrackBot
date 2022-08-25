@@ -11,7 +11,7 @@ services:
     image: livetrackbot-code
     environment:
       - METRICS_PORT=9096
-    command: --channel @alpsfreeride --url https://www.alpsfreeride.com/livetracking/json4Others.php
+    command: --channel @alpsfreeride_tracking --url https://www.alpsfreeride.com/livetracking/json4Others.php
     ports:
       - 9096:9096
     volumes:
@@ -30,7 +30,7 @@ services:
     image: livetrackbot-code
     environment:
       - METRICS_PORT=9097
-    command: --channel @FollowAxlair --url https://livetrack.gartemann.tech/json4Others.php?pL=Axel
+    command: --channel @axlair_tracking --url https://livetrack.gartemann.tech/json4Others.php?pL=Axel
     ports:
       - 9097:9097
     volumes:
